@@ -153,9 +153,11 @@ public isolated service class WsService {
     }
 
     isolated function handleUserMessage(websocket:Caller caller, json messageData) returns error? {
+        LW:loggerWrite("info", messageData.toString());
         int|error messageId = value:ensureType(messageData.messageId, int);
         string|error collectionName = value:ensureType(messageData.email, string); // User email is the collection name
-        string|error rxId = value:ensureType(messageData.id, string); // TODO Should be changed later
+        string|error rxEmail = value:ensureType(messageData.rxEmail, string);
+        string|error txEmail = value:ensureType(messageData.email, string);
         string|error message = value:ensureType(messageData.message, string);
 
         if messageId is int {
@@ -163,11 +165,12 @@ public isolated service class WsService {
             check caller->writeMessage(MessageState);
         }
 
-        if messageId is int && collectionName is string && rxId is string && message is string {
+        if messageId is int && collectionName is string && rxEmail is string && txEmail is string && message is string {
             Types:Message newMessage = {
                 id: messageId,
-                rxId: rxId,
-                message: message
+                rxEmail: rxEmail,
+                txEmail: txEmail,
+                message: message  
             };
 
             boolean sendMessage = DAD:sendMessage(collectionName, newMessage);
@@ -180,7 +183,7 @@ public isolated service class WsService {
 
         } else {
             if messageId is int {
-                LW:loggerWrite("error", "6 Invalid message received: " + (typeof collectionName).toString() + " " + (typeof rxId).toString() + " " + (typeof message).toString());
+                LW:loggerWrite("error", "6 Invalid message received: " + (typeof collectionName).toString() + " " + (typeof rxEmail).toString() + " " + (typeof message).toString());
                 check caller->writeMessage(self.MessageState(messageId, 607));
             }
         }

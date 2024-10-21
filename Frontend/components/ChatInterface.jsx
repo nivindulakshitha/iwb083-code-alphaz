@@ -3,42 +3,40 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useWebSocket } from '@/contexts/WebSocketContext';
+import { useMessages } from '@/contexts/MessageContext';
+import { useUser } from '@/contexts/UserProfile';
 
 export default function ChatInterface({ selectedChat }) {
+  const { messages, setMessages } = useMessages();
   const { messageClient, readyState } = useWebSocket();
-  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [currentChats, setCurrentChats] = useState({});
+  const {user} = useUser();
 
   const handleSendMessage = () => {
-    if (input.trim() !== '') {
+    /* if (input.trim() !== '') {
       const currentTime = new Date().toLocaleTimeString();
       setMessages([...messages, { text: input, sender: 'self', time: currentTime }]);
       setInput('');
+    } */
+    if (messageClient && readyState) {
+      messageClient.sendMessage("usermessage", input, selectedChat.email);
     }
   };
 
   useEffect(() => {
-    if (messageClient) {
-      const myDetails = messageClient.clientDetails();
+    const rx = selectedChat.recieverEmail;
+    const tx = selectedChat.senderEmail;
 
-      const newMessage = {
-        text: selectedChat.message,
-        sender: selectedChat.rxId === myDetails.id ? 'self' : 'other',
-        time: new Date(selectedChat.id).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-
-      setMessages((prevMessages) => {
-        const messageExists = prevMessages.some(
-          (msg) => msg.text === newMessage.text && msg.time === newMessage.time
-        );
-
-        if (!messageExists) {
-          return [...prevMessages, newMessage];
+    if (rx && tx) {
+      Object.entries(messages).forEach(([key, value]) => {
+        if (value.rxEmail === rx && value.txEmail === tx) {
+          value.txEmail === user.email ? selectedChat.sender = 'self' : selectedChat.sender = 'other';
+          setCurrentChats(prevChats => ({ ...prevChats, [value.id]: selectedChat }));
         }
-        return prevMessages;
-      });
+      })
     }
-  }, [selectedChat, messageClient]);
+  }, [selectedChat, messages]);
 
   return (
     <div className="w-3/4 p-4 bg-white h-screen flex flex-col">
@@ -55,7 +53,7 @@ export default function ChatInterface({ selectedChat }) {
 
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex flex-col space-y-2">
-          {messages.map((message, index) => (
+          {/* {messages.map((message, index) => (
             <div
               key={index}
               className={`p-4 rounded-lg w-max ${message.sender === 'self' ? 'bg-purple-400 text-white self-end' : 'bg-purple-100'}`}
@@ -63,7 +61,23 @@ export default function ChatInterface({ selectedChat }) {
               {message.text}
               <p className="text-xs text-gray-500 mt-1 text-right">{message.time}</p>
             </div>
-          ))}
+          ))} */}
+
+          {
+            Object.keys(currentChats).sort().forEach((key) => {
+              const message = currentChats[key];
+              console.log(message)
+              return (
+                <div
+                  key={key}
+                  className={`p-4 rounded-lg w-max ${message.sender === 'self' ? 'bg-purple-400 text-white self-end' : 'bg-purple-100'}`}
+                >
+                  {message.message}
+                  <p className="text-xs text-gray-500 mt-1 text-right">{message.time}</p>
+                </div>
+              )
+            })
+          }
         </div>
       </div>
 

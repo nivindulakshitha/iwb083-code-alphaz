@@ -14,7 +14,6 @@ const Sidebar = ({ profile: myDetails }) => {
 	});
 
 	useEffect(() => {
-		console.log(myDetails)
 		if (myDetails?.id) {
 			setUser({
 				name: myDetails.fullname,

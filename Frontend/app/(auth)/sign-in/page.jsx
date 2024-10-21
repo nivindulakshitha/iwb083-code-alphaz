@@ -67,8 +67,8 @@ export default function Home() {
 				const interval = setInterval(() => {
 					setProgress(syncProgress);
 					if (Math.ceil(syncProgress) >= 100) {
-						router.push(`/chat`);
 						syncMessages(preMessages);
+						router.push(`/chat`);
 						formatMessages(preMessages).then(() => {
 							setLoadingUnmounter(true);
 							clearInterval(interval);

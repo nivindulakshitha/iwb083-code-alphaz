@@ -82,6 +82,10 @@ export class WebSocketClient {
 	onMessage(event) {
 		const response = JSON.parse(event.data);
 
+		if (response.state == 602) {
+			console.log(response.messageId, " is sent.")
+		}
+
 		if (response.code === 701) { // When server return user's details
 			this.userReturnCallback(response.value);
 		}
@@ -93,7 +97,7 @@ export class WebSocketClient {
 		else if (response.code === 704) { // A pre-message is recieved
 			let targetProgress = 0;
 			if (this.preLoadingCount && this.preLoadingCount > 0) {
-				preLoadingMessages[response.value.id] = response.value;
+				preLoadingMessages[response.value?.id] = response.value;
 
 				this.preLoadingCount === 0 ? (this.preLoadingCount = 1) : this.preLoadingCount;
 				const progress = (Object.keys(preLoadingMessages).length / this.preLoadingCount) * 100;

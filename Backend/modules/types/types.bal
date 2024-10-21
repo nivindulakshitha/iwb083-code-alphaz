@@ -36,15 +36,11 @@ public type User record {
     string|() jwtoken = ();
 };
 
-# Description.
-#
-# + id - field description  
-# + rxId - field description  
-# + message - field description  
-# + timestamp - field description
+
 public type Message record {|
     int id;
-    string rxId;
+    string rxEmail;
+    string txEmail;
     string message;
     string|int timestamp = getThisTime();
 |};

@@ -132,7 +132,8 @@ public isolated function getUser(string searchBy, string|json query) returns Typ
 # + return - return value description
 public isolated function sendMessage(string email, Types:Message message) returns boolean {
     do {
-        boolean insertResult = DB:insert("messages", email, message);
+        boolean insertResult = DB:insert("messages", message.rxEmail, message);
+        insertResult = DB:insert("messages", email, message);
         return insertResult;
 
     } on fail var e {
