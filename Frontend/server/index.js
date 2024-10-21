@@ -11,6 +11,17 @@ export class WebSocketClient {
 		this.socket.addEventListener("message", (event) => this.onMessage(event));
 		this.readyState = this.socket.readyState;
 		this.preLoadingCount = undefined;
+		this.userReturnCallback = undefined;
+	}
+
+	returnUserDetails(callback, query) {
+		if (serverLoginDetails !== undefined) {
+			this.sendMessage("#user", query);
+		} else {
+			callback(undefined);
+		}
+
+		this.userReturnCallback = callback
 	}
 
 	clientDetails() {
@@ -71,11 +82,15 @@ export class WebSocketClient {
 	onMessage(event) {
 		const response = JSON.parse(event.data);
 
-		if (response.code === 703) { // When server return user's pre-messages
+		if (response.code === 701) { // When server return user's details
+			this.userReturnCallback(response.value);
+		}
+
+		else if (response.code === 703) { // When server return user's pre-messages
 			this.preLoadingCount = response.value;
 		}
 
-		if (response.code === 704) { // A pre-message is recieved
+		else if (response.code === 704) { // A pre-message is recieved
 			let targetProgress = 0;
 			if (this.preLoadingCount && this.preLoadingCount > 0) {
 				preLoadingMessages[response.value.id] = response.value;
@@ -112,7 +127,7 @@ export class WebSocketClient {
 			}
 		}
 
-		if (response.state === 705 && serverLoginDetails !== undefined) { // A ping-pong message received
+		else if (response.state === 705 && serverLoginDetails !== undefined) { // A ping-pong message received
 			this.sendMessage("#pong", "pong");
 		}
 	}

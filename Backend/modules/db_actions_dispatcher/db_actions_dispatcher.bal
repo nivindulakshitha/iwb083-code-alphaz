@@ -113,12 +113,16 @@ public isolated function signUpUser(json requestBody) returns http:Response {
     }
 }
 
-# Description.
-#
-# + email - parameter description
-# + return - return value description
-public isolated function getUser(string email) returns Types:User? {
-    return DB:findOne("users", email, {});
+
+
+public isolated function getUser(string searchBy, string|json query) returns Types:User? {
+    if (searchBy is "email" && query is string) {
+        return DB:findOne("users", query, {});
+    } else if (searchBy is "tagname") {
+        return DB:findUserInAllCollections("users", query);
+    } else {
+        return DB:findUserInAllCollections("users", query);
+    }
 }
 
 # Description.

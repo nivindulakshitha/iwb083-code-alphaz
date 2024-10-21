@@ -77,7 +77,7 @@ public isolated function getStateCode(string state) returns string {
             return "failed";
         }
         "701" => {
-            return "#pingpong";
+            return "#user";
         }
         "702" => {
             return "#online";

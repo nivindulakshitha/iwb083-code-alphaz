@@ -20,7 +20,7 @@ const Chat = () => {
     if (readyState.client && readyState.server) {
 
     } else {
-      window.location.href = "/";
+      //window.location.href = "/";
       console.log("messageClient is null");
     }
   }, [readyState]);

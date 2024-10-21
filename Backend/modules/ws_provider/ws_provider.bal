@@ -112,14 +112,39 @@ public isolated service class WsService {
             //LW:loggerWrite("info", "Connection is alive: " + caller.getConnectionId().toString());
         } else if messageType == "#user" {
             string|error email = value:ensureType(messageData.email, string);
-            if email is string {
-                Types:User? user = DAD:getUser(email);
+            json|error query = value:ensureType(messageData.message, json);
+
+            if (email is string && query is error) {
+                Types:User? user = DAD:getUser("email", email);
 
                 if user is Types:User {
                     return caller->writeTextMessage(user.toString());
                 } else {
                     LW:loggerWrite("error", "User not found: " + email);
                 }
+            } else if query is json {
+                LW:loggerWrite("info", query.toString());
+                Types:User? user = DAD:getUser("tagname", query);
+
+                if user is Types:User {
+                    Types:SystemMessage systemMessage = {
+                        code: 701,
+                        message: "User details request reply",
+                        value: user
+                    };
+
+                    return caller->writeMessage(systemMessage.toString());
+                } else {
+                    Types:SystemMessage systemMessage = {
+                        code: 701,
+                        message: "User details request reply",
+                        value: null
+                    };
+
+                    LW:loggerWrite("error", "User not found: " + query.toString());
+                    return caller->writeMessage(systemMessage.toString());
+                }
+
             } else {
                 LW:loggerWrite("error", "11 Invalid message received: " + (typeof email).toString());
             }

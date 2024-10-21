@@ -136,6 +136,43 @@ public isolated function findOne(string databaseName, string collectionName, jso
     }
 }
 
+public isolated function findUserInAllCollections(string databaseName, json query) returns Types:User? {
+    // Get the list of all collections in the database
+    mongodb:Database|error databaseResult = databaseAccessor(databaseName);
+    if databaseResult is error {
+        LW:loggerWrite("error", "Database not found: " + databaseResult.message() + ".");
+        return null;
+    }
+
+    mongodb:Database database = databaseResult;
+
+    string[]|error collectionsResult = database->listCollectionNames();
+    if collectionsResult is error {
+        LW:loggerWrite("error", "Error while listing collections: " + collectionsResult.message());
+        return null;
+    }
+
+    foreach var collectionName in collectionsResult {
+        mongodb:Collection|error collection = collectionAccessor(databaseName, collectionName);
+        if collection is error {
+            LW:loggerWrite("error", "Collection not found: " + collection.message() + ".");
+            continue;
+        }
+        
+        Types:User|error|() findResult = collection->findOne(<map<json>>query);
+        if findResult is Types:User {
+            LW:loggerWrite("info", "User found in collection: " + collectionName + ". " + findResult.toJsonString());
+            return findResult;
+        } else if findResult is error {
+            LW:loggerWrite("error", "Error searching in collection " + collectionName + ": " + findResult.message());
+        }
+    }
+
+    LW:loggerWrite("info", "User not found in any collection.");
+    return null;
+}
+
+
 isolated Types:User[] documents = [];
 
 # Description.
