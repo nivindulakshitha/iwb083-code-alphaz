@@ -35,7 +35,7 @@ const Chat = () => {
         }
       })
     } else {
-      //window.location.href = "/";
+      window.location.href = "/";
       console.log("messageClient is null");
     }
   }, [messages]);
@@ -49,7 +49,7 @@ const Chat = () => {
           }
         })
       }
-    }, 3000) //TODO: Changes
+    }, 30000) //TODO: Changes
   }, [messageClient, user]);
 
   return (

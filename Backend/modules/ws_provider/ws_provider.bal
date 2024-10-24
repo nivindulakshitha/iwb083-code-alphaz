@@ -5,6 +5,8 @@ import Backend.types as Types;
 import ballerina/lang.value;
 import ballerina/websocket;
 
+isolated int[] messageIds = [];
+
 # Description.
 public isolated service class WsService {
     *websocket:Service;
@@ -153,24 +155,35 @@ public isolated service class WsService {
     }
 
     isolated function handleUserMessage(websocket:Caller caller, json messageData) returns error? {
-        LW:loggerWrite("info", messageData.toString());
+        LW:loggerWrite("info", "User message received: " + messageData.toString());
         int|error messageId = value:ensureType(messageData.messageId, int);
         string|error collectionName = value:ensureType(messageData.email, string); // User email is the collection name
         string|error rxEmail = value:ensureType(messageData.rxEmail, string);
         string|error txEmail = value:ensureType(messageData.email, string);
         string|error message = value:ensureType(messageData.message, string);
+        boolean isMessageIdPresent = false;
 
         if messageId is int {
-            final Types:MessageState MessageState = <Types:MessageState>self.MessageState(messageId, 601);
-            check caller->writeMessage(MessageState);
+            lock {
+                isMessageIdPresent = messageIds.indexOf(messageId) is ();
+            }
+
+            if isMessageIdPresent {
+                final Types:MessageState MessageState = <Types:MessageState>self.MessageState(messageId, 607);
+                check caller->writeMessage(MessageState);
+            } else {
+                final Types:MessageState MessageState = <Types:MessageState>self.MessageState(messageId, 601);
+                check caller->writeMessage(MessageState);
+            }
+
         }
 
-        if messageId is int && collectionName is string && rxEmail is string && txEmail is string && message is string {
+        if !isMessageIdPresent && messageId is int && collectionName is string && rxEmail is string && txEmail is string && message is string {
             Types:Message newMessage = {
                 id: messageId,
                 rxEmail: rxEmail,
                 txEmail: txEmail,
-                message: message  
+                message: message
             };
 
             boolean sendMessage = DAD:sendMessage(collectionName, newMessage);

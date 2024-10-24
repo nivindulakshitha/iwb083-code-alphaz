@@ -37,6 +37,7 @@ export class WebSocketClient {
 			messageType: "#email",
 			...serverLoginDetails
 		};
+
 		this.socket.send(JSON.stringify(data));
 		this.preMessagesSyncCallback = callback;
 	}
@@ -59,7 +60,11 @@ export class WebSocketClient {
 				...serverLoginDetails
 			}
 
-			this.socket.send(JSON.stringify(JSON.parse(JSON.stringify(data))));
+			const jsonData = JSON.parse(JSON.stringify(data));
+
+			this.socket.send(JSON.stringify(jsonData));
+
+			jsonData.messageType.charAt(0) == "#" ? console.log() : console.log("A message send:", jsonData)
 		} else {
 			window.location.href = "/";
 		}
@@ -94,7 +99,7 @@ export class WebSocketClient {
 			this.preLoadingCount = response.value;
 		}
 
-		else if (response.code === 704) { // A pre-message is recieved
+		/* else if (response.code === 704) { // A pre-message is recieved
 			let targetProgress = 0;
 			if (this.preLoadingCount && this.preLoadingCount > 0) {
 				preLoadingMessages[response.value?.id] = response.value;
@@ -102,7 +107,7 @@ export class WebSocketClient {
 				this.preLoadingCount === 0 ? (this.preLoadingCount = 1) : this.preLoadingCount;
 				const progress = (Object.keys(preLoadingMessages).length / this.preLoadingCount) * 100;
 
-				const currentProgress = this.currentProgress || 0;
+				this.currentProgress = this.currentProgress || 0;
 				targetProgress = progress;
 				let interval = setInterval(() => {
 					if (this.currentProgress >= targetProgress) {
@@ -128,6 +133,54 @@ export class WebSocketClient {
 					this.preLoadingCount = undefined;
 					this.currentProgress = 0;
 				}, 1000);
+			}
+		} */
+
+		else if (response.code === 704) { // A pre-message is received
+			if (this.preLoadingCount && this.preLoadingCount > 0) {
+				// Add the received message to preLoadingMessages
+				preLoadingMessages[response.value?.id] = response.value;
+
+				// Calculate the current number of messages received
+				const messageCount = Object.keys(preLoadingMessages).length;
+
+				// Calculate progress as messageCount / total count * 100
+				let progress = (messageCount / this.preLoadingCount) * 100;
+
+				// Ensure progress does not exceed 100
+				if (progress >= 100) {
+					progress = 100;
+				}
+
+				// Log the current progress for debugging
+				console.log(this.preLoadingCount, Object.keys(preLoadingMessages).length, progress); // Log progress each time
+
+				// Update the progress if it has changed
+				if (this.currentProgress != Math.floor(progress)) {
+					this.currentProgress = Math.floor(progress); // Floor the progress for whole numbers
+
+					// Trigger the callback to update the UI with the new progress
+					this.preMessagesSyncCallback(preLoadingMessages, this.currentProgress);
+
+					// Log current progress to track updates
+					console.log("Progress updated:", this.currentProgress);
+				}
+
+				// If we've received all messages, force the progress to 100%
+				if (messageCount == this.preLoadingCount && this.currentProgress < 100) {
+					this.currentProgress = 100;
+
+					// Final update to 100%
+					this.preMessagesSyncCallback(preLoadingMessages, this.currentProgress);
+					console.log("All messages loaded, progress is 100%!");
+
+					// Clean up and reset after a short delay
+					setTimeout(() => {
+						preLoadingMessages = {};
+						this.preLoadingCount = undefined;
+						this.currentProgress = 0;
+					}, 1000);
+				}
 			}
 		}
 
